@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080a0f">
+  <meta name="description" content="سرعت‌سنج فارسی خودرو با GPS گوشی">
+  <title>سرعت‌سنج خودرو</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='29' fill='%23080a0f' stroke='%23ef2b2d' stroke-width='5'/%3E%3Cpath d='M32 13v6M16 21l5 4M48 21l-5 4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M32 35l15-11' stroke='%23ef2b2d' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='35' r='5' fill='white'/%3E%3C/svg%3E">
+  <style>
+    :root{--bg:#080a0f;--panel:#11151d;--line:#252b36;--text:#f5f7fa;--muted:#939baa;--red:#ef2b2d;--green:#41d58a}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Tahoma,"Segoe UI",sans-serif}
+    body{min-height:100svh;display:grid;place-items:center;padding:18px;padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(18px,env(safe-area-inset-bottom));overflow-x:hidden}
+    .app{width:min(100%,460px);display:grid;gap:16px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+    h1{font-size:1rem;margin:0;font-weight:700}.gps{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.85rem}.dot{width:8px;height:8px;border-radius:50%;background:#666}.dot.on{background:var(--green);box-shadow:0 0 12px var(--green)}
+    .dial{position:relative;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 44%,#1a202a 0 38%,#0c0f15 39% 63%,#202632 64% 65%,#0a0d12 66%);box-shadow:0 24px 70px #0009,inset 0 0 35px #000;border:1px solid #2b323e;overflow:hidden}
+    .dial:before{content:"";position:absolute;inset:6%;border-radius:50%;background:repeating-conic-gradient(from -130deg,transparent 0deg 7deg,#5b6472 7.4deg 8deg,transparent 8.4deg 12deg);mask:radial-gradient(circle,transparent 0 75%,#000 76%);opacity:.72}
+    .arc{position:absolute;inset:9%;border-radius:50%;background:conic-gradient(from 230deg,var(--red) 0deg,var(--red) var(--p),#242a34 var(--p),#242a34 260deg,transparent 260deg);mask:radial-gradient(circle,transparent 0 86%,#000 87%)}
+    .readout{position:relative;text-align:center;z-index:2;direction:ltr}.speed{font-family:Arial,sans-serif;font-variant-numeric:tabular-nums;font-size:clamp(5.3rem,25vw,7.5rem);line-height:.9;font-weight:800;letter-spacing:-.08em;padding-right:.08em;text-shadow:0 4px 30px #000}.unit{font-size:1rem;color:var(--muted);margin-top:14px;letter-spacing:.08em}.accuracy{font-size:.78rem;color:#6f7887;margin-top:7px;min-height:1.1em}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:linear-gradient(160deg,#171c25,#10141b);border:1px solid var(--line);border-radius:16px;text-align:center;padding:13px 7px}.stat b{display:block;font-family:Arial,sans-serif;font-size:1.35rem;font-variant-numeric:tabular-nums}.stat span{display:block;color:var(--muted);font-size:.78rem;margin-top:5px}
+    button{width:100%;min-height:58px;border:0;border-radius:17px;background:var(--red);color:white;font:700 1.05rem Tahoma,sans-serif;cursor:pointer;box-shadow:0 12px 30px #ef2b2d38;transition:transform .15s,filter .15s}button:active{transform:scale(.985)}button.stop{background:#252b35;box-shadow:none}button:disabled{filter:grayscale(.7);opacity:.65}
+    .message{min-height:42px;border:1px solid var(--line);background:#0d1016;border-radius:13px;color:var(--muted);font-size:.84rem;line-height:1.65;padding:9px 12px;text-align:center}.message.error{border-color:#672a30;color:#ffadb2}
+    .hint{margin:0;text-align:center;color:#6f7887;font-size:.76rem;line-height:1.7}
+    @media(max-height:720px){.app{gap:10px}.dial{width:min(68svh,100%);justify-self:center}.stats .stat{padding:9px 5px}button{min-height:52px}.hint{display:none}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header><h1>سرعت‌سنج خودرو</h1><div class="gps"><span id="dot" class="dot"></span><span id="gpsText">GPS خاموش</span></div></header>
+    <section class="dial" aria-label="سرعت لحظه‌ای">
+      <div id="arc" class="arc" style="--p:0deg"></div>
+      <div class="readout"><div id="speed" class="speed">0</div><div class="unit">km/h</div><div id="accuracy" class="accuracy"></div></div>
+    </section>
+    <section class="stats">
+      <div class="stat"><b id="max">0</b><span>بیشترین سرعت</span></div>
+      <div class="stat"><b id="avg">0</b><span>میانگین سرعت</span></div>
+      <div class="stat"><b id="distance">0.00</b><span>مسافت (km)</span></div>
+    </section>
+    <button id="toggle">شروع سرعت‌سنج</button>
+    <div id="message" class="message">برای شروع، دسترسی موقعیت مکانی را تأیید کنید.</div>
+    <p class="hint">برای دقت بهتر، برنامه را در فضای باز و گوشی را نزدیک شیشه جلو قرار دهید. هنگام رانندگی با گوشی کار نکنید.</p>
+  </main>
+  <script>
+    const $=id=>document.getElementById(id); let watchId=null,last=null,max=0,totalDistance=0,weightedSpeed=0,totalTime=0,shown=0;
+    const toRad=x=>x*Math.PI/180;
+    function distance(a,b){const R=6371000,dLat=toRad(b.latitude-a.latitude),dLon=toRad(b.longitude-a.longitude),la1=toRad(a.latitude),la2=toRad(b.latitude);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+    function render(v,acc){shown=Math.max(0,Math.round(v));$('speed').textContent=shown;$('arc').style.setProperty('--p',Math.min(260,shown/240*260)+'deg');max=Math.max(max,shown);$('max').textContent=max;$('avg').textContent=totalTime?Math.round(weightedSpeed/totalTime):0;$('distance').textContent=(totalDistance/1000).toFixed(2);$('accuracy').textContent=acc?`دقت GPS حدود ${Math.round(acc)} متر`:''}
+    function onPosition(p){const c=p.coords,now=p.timestamp;let kmh=Number.isFinite(c.speed)&&c.speed>=0?c.speed*3.6:null;if(last){const dt=(now-last.time)/1000,ds=distance(last.coords,c);if(dt>0&&dt<15&&ds<500){if(ds>Math.max(2,c.accuracy*.18))totalDistance+=ds;if(kmh===null)kmh=ds/dt*3.6;if(kmh<260){weightedSpeed+=kmh*dt;totalTime+=dt}}}last={coords:c,time:now};kmh=kmh??0;const smooth=kmh<2?0:(shown*.35+kmh*.65);render(smooth,c.accuracy);$('dot').classList.add('on');$('gpsText').textContent='GPS فعال';$('message').className='message';$('message').textContent=c.accuracy>50?'در حال بهبود دقت GPS…':'سرعت در حال محاسبه است.'}
+    function onError(e){const msg=e.code===1?'دسترسی موقعیت مکانی داده نشد. آن را در تنظیمات مرورگر فعال کنید.':e.code===2?'سیگنال GPS پیدا نشد؛ به فضای باز بروید.':'دریافت GPS زمان‌بر شد؛ دوباره تلاش کنید.';$('message').textContent=msg;$('message').className='message error';stop(false)}
+    function start(){if(!navigator.geolocation){$('message').textContent='این مرورگر GPS را پشتیبانی نمی‌کند.';$('message').className='message error';return}max=0;totalDistance=0;weightedSpeed=0;totalTime=0;last=null;render(0);$('toggle').disabled=true;$('message').textContent='در حال اتصال به GPS…';watchId=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,maximumAge:1000,timeout:15000});$('toggle').disabled=false;$('toggle').textContent='توقف سرعت‌سنج';$('toggle').classList.add('stop')}
+    function stop(resetText=true){if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;$('dot').classList.remove('on');$('gpsText').textContent='GPS خاموش';$('toggle').textContent='شروع سرعت‌سنج';$('toggle').classList.remove('stop');if(resetText){$('message').textContent='سرعت‌سنج متوقف شد. آمار سفر روی صفحه باقی مانده است.';$('message').className='message'}}
+    $('toggle').addEventListener('click',()=>watchId===null?start():stop());document.addEventListener('visibilitychange',()=>{if(document.hidden&&watchId!==null)$('message').textContent='برای ادامه اندازه‌گیری، برنامه را روی صفحه نگه دارید.'});
+  </script>
+</body>
+</html>
